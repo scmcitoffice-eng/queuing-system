@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Display — QueueFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background: #000;
+            /* Darker background for high contrast on TVs */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .display-container {
+            width: 95vw;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .now-serving-card {
+            padding: 80px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 0 100px rgba(26, 86, 219, 0.5);
+        }
+
+        .ns-label {
+            font-size: 40px;
+            letter-spacing: 12px;
+            margin-bottom: 20px;
+        }
+
+        .ns-number {
+            font-size: 350px;
+        }
+
+        .ns-sub {
+            font-size: 60px;
+            margin-top: 40px;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="display-container">
+        <div class="now-serving-card">
+            <div class="ns-label">NOW SERVING</div>
+            <div class="ns-number" id="displayNum">—</div>
+            <div class="ns-sub" id="displaySub">Please wait to be called</div>
+        </div>
+    </div>
+
+    <script>
+        const numEl = document.getElementById('displayNum');
+        const subEl = document.getElementById('displaySub');
+
+        function updateDisplay(data) {
+            if (!data) return;
+
+            // Trigger animation if number changed
+            if (numEl.textContent !== data.num) {
+                numEl.classList.remove('pop');
+                void numEl.offsetWidth;
+                numEl.classList.add('pop');
+            }
+
+            numEl.textContent = data.num;
+            subEl.textContent = data.sub || (data.num === "—" ? "Please wait to be called" : "Please proceed to the cashier");
+        }
+
+        // Listen for updates from the cashier tab
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'queue_sync') {
+                updateDisplay(JSON.parse(e.newValue));
+            }
+        });
+
+        // Initial load
+        const saved = localStorage.getItem('queue_sync');
+        if (saved) {
+            updateDisplay(JSON.parse(saved));
+        }
+    </script>
+</body>
+
+</html>
