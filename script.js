@@ -34,18 +34,6 @@ function fmt(prefix, n) {
   return prefix + String(n).padStart(3, '0');
 }
 
-function announceNumber(label) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const msg = new SpeechSynthesisUtterance();
-  msg.text = `Now serving number ${label}. Please proceed to the window.`;
-  msg.lang = 'en-US';
-  msg.rate = 0.85;
-  msg.pitch = 1;
-  msg.volume = 1;
-  window.speechSynthesis.speak(msg);
-}
-
 function setTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -131,7 +119,6 @@ function callNext() {
   void display.offsetWidth;
   display.classList.add('pop');
 
-  announceNumber(fmt(q.prefix, q.current));
   addHistory('Called', q.current);
   renderQueue();
 }
@@ -139,7 +126,6 @@ function callNext() {
 function recallCurrent() {
   const q = getQ();
   if (q.current === 0) return;
-  announceNumber(fmt(q.prefix, q.current));
   addHistory('Recalled', q.current);
   renderQueue();
 }

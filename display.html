@@ -357,8 +357,21 @@
         const countEl = document.getElementById('totalCount');
         const badgeEl = document.getElementById('connBadge');
 
+        let lastAnnouncedTs = 0;
         const colorMap = { H: 'hmo', C: 'cash', P: 'priority' };
         const typeLabel = { H: 'HMO', C: 'Cash', P: 'PWD / Priority' };
+
+        function announceNumber(label) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = `Now serving number ${label}. Please proceed to the window.`;
+            msg.lang = 'en-US';
+            msg.rate = 0.85;
+            msg.pitch = 1;
+            msg.volume = 1;
+            window.speechSynthesis.speak(msg);
+        }
 
         function fmt(prefix, n) {
             return prefix + String(n).padStart(3, '0');
@@ -402,6 +415,14 @@
 
         function updateDisplay(data) {
             if (!data) return;
+
+            // Announce if there's a new interaction (based on timestamp)
+            if (data.ts && data.ts > lastAnnouncedTs) {
+                if (data.num && data.num !== '—') {
+                    announceNumber(data.num);
+                }
+                lastAnnouncedTs = data.ts;
+            }
 
             if (numEl.textContent !== data.num) {
                 numEl.classList.remove('pop');
