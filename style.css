@@ -104,25 +104,29 @@ body {
 
 /* ── NOW SERVING ── */
 .now-serving-card {
-  background: var(--blue);
+  background: url('bg-serving.jpg') center / cover no-repeat;
   border-radius: 20px;
   padding: 36px 40px;
   margin-bottom: 20px;
   text-align: center;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(26, 86, 219, 0.35);
+  box-shadow: 0 8px 30px rgba(140, 0, 0, 0.35);
 }
 
+/* Dark overlay so the white text stays readable */
 .now-serving-card::before {
   content: '';
   position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 220px;
-  height: 220px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 50%;
+  inset: 0;
+  background: rgba(120, 0, 0, 0.45);
+  z-index: 0;
+}
+
+/* Make sure all children sit above the overlay */
+.now-serving-card>* {
+  position: relative;
+  z-index: 1;
 }
 
 .ns-label {
@@ -493,4 +497,70 @@ body {
   .ticket-counter {
     text-align: center;
   }
+}
+
+/* ── QUEUE TYPE TABS ── */
+.tab-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+}
+
+.tab-btn:hover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.tab-btn.active {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: white;
+}
+
+.tab-icon {
+  font-size: 22px;
+}
+
+.tab-label {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.tab-prefix {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.65;
+  letter-spacing: 0.5px;
+}
+
+.tab-btn[data-tab="HMO"].active {
+  background: #1a56db;
+  border-color: #1341b0;
+}
+
+.tab-btn[data-tab="Cash"].active {
+  background: #0e9f6e;
+  border-color: #0a7a55;
+}
+
+.tab-btn[data-tab="Priority"].active {
+  background: #d97706;
+  border-color: #b45309;
 }

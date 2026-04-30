@@ -4,72 +4,368 @@
 <head>
     <meta charset="UTF-8">
     <title>Customer Display — QueueFlow</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@500;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
-        body {
-            background: #000;
-            /* Darker background for high contrast on TVs */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+        * {
+            box-sizing: border-box;
+            margin: 0;
             padding: 0;
         }
 
-        .display-container {
-            width: 95vw;
-            height: 90vh;
+        body {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'DM Sans', sans-serif;
         }
 
-        .now-serving-card {
-            padding: 80px;
-            height: 100%;
+        .main-display {
+            flex: 1;
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            box-shadow: 0 0 100px rgba(26, 86, 219, 0.5);
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .main-display::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('bg-serving.jpg') center / cover no-repeat;
+            z-index: 0;
+        }
+
+        .main-display::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(80, 0, 0, 0.55);
+            z-index: 1;
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
         }
 
         .ns-label {
-            font-size: 40px;
-            letter-spacing: 12px;
-            margin-bottom: 20px;
+            font-size: 32px;
+            letter-spacing: 14px;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
         }
 
         .ns-number {
-            font-size: 350px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(160px, 20vw, 300px);
+            color: #fff;
+            line-height: 1;
+            text-shadow: 0 0 80px rgba(220, 50, 50, 0.8), 0 6px 30px rgba(0, 0, 0, 0.9);
+            -webkit-text-stroke: 2px rgba(0, 0, 0, 0.3);
         }
 
         .ns-sub {
-            font-size: 60px;
-            margin-top: 40px;
+            font-size: 40px;
+            margin-top: 20px;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Side Panel */
+        .side-panel {
+            width: 280px;
+            background: #0f0f0f;
+            border-left: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .side-header {
+            padding: 20px 18px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            background: #1a1a1a;
+        }
+
+        .side-header-title {
+            font-weight: 700;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .side-header-count {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
             color: #fff;
+            line-height: 1.1;
+            margin-top: 2px;
+        }
+
+        .side-header-count span {
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 18px;
+        }
+
+        .side-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .side-scroll::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .side-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .side-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+        }
+
+        .called-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.04);
+            border-left: 3px solid transparent;
+            animation: slideIn 0.25s ease forwards;
+        }
+
+        .called-item:first-child {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .called-item.type-hmo {
+            border-left-color: #4d82f3;
+        }
+
+        .called-item.type-cash {
+            border-left-color: #2ecf9a;
+        }
+
+        .called-item.type-priority {
+            border-left-color: #f5c400;
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .type-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .type-dot.hmo {
+            background: #4d82f3;
+        }
+
+        .type-dot.cash {
+            background: #2ecf9a;
+        }
+
+        .type-dot.priority {
+            background: #f5c400;
+        }
+
+        .called-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 2px;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .called-meta {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.28);
+            margin-top: 1px;
+        }
+
+        .called-time {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.22);
+            flex-shrink: 0;
+        }
+
+        .no-calls {
+            padding: 24px 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.18);
+            font-style: italic;
+            text-align: center;
+        }
+
+        .side-legend {
+            padding: 10px 18px 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0.75);
+                opacity: 0;
+            }
+
+            65% {
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .ns-number.pop {
+            animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
     </style>
 </head>
 
 <body>
-    <div class="display-container">
-        <div class="now-serving-card">
+
+    <div class="main-display">
+        <div class="main-content">
             <div class="ns-label">NOW SERVING</div>
             <div class="ns-number" id="displayNum">—</div>
             <div class="ns-sub" id="displaySub">Please wait to be called</div>
         </div>
     </div>
 
+    <div class="side-panel">
+        <div class="side-header">
+            <div class="side-header-title">Called Numbers</div>
+            <div class="side-header-count" id="totalCount">0 <span>served</span></div>
+        </div>
+
+        <div class="side-scroll" id="calledList">
+            <div class="no-calls">No numbers called yet.</div>
+        </div>
+
+        <div class="side-legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#4d82f3"></div> HMO
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#2ecf9a"></div> Cash
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#f5c400"></div> Priority
+            </div>
+        </div>
+    </div>
+
     <script>
         const numEl = document.getElementById('displayNum');
         const subEl = document.getElementById('displaySub');
+        const listEl = document.getElementById('calledList');
+        const countEl = document.getElementById('totalCount');
+
+        const colorMap = { H: 'hmo', C: 'cash', P: 'priority' };
+        const typeLabel = { H: 'HMO', C: 'Cash', P: 'PWD / Priority' };
+
+        function fmt(prefix, n) {
+            return prefix + String(n).padStart(3, '0');
+        }
+
+        function renderSidePanel(data) {
+            if (!data || !data.allQueues) return;
+
+            const all = [];
+            for (const [type, q] of Object.entries(data.allQueues)) {
+                q.history
+                    .filter(e => e.action === 'Called' || e.action === 'Skipped')
+                    .forEach(e => {
+                        all.push({
+                            label: fmt(q.prefix, e.num),
+                            prefix: q.prefix,
+                            action: e.action,
+                            time: e.time
+                        });
+                    });
+            }
+
+            if (all.length === 0) {
+                listEl.innerHTML = `<div class="no-calls">No numbers called yet.</div>`;
+                countEl.innerHTML = `0 <span>served</span>`;
+                return;
+            }
+
+            countEl.innerHTML = `${all.length} <span>served</span>`;
+
+            listEl.innerHTML = all.map((entry, i) => {
+                const cc = colorMap[entry.prefix] || 'hmo';
+                return `
+                    <div class="called-item type-${cc}">
+                        <div class="item-left">
+                            <div class="type-dot ${cc}"></div>
+                            <div>
+                                <div class="called-num">${entry.label}</div>
+                                <div class="called-meta">${typeLabel[entry.prefix] || ''} &middot; ${entry.action}</div>
+                            </div>
+                        </div>
+                        <div class="called-time">${entry.time}</div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         function updateDisplay(data) {
             if (!data) return;
 
-            // Trigger animation if number changed
             if (numEl.textContent !== data.num) {
                 numEl.classList.remove('pop');
                 void numEl.offsetWidth;
@@ -77,21 +373,20 @@
             }
 
             numEl.textContent = data.num;
-            subEl.textContent = data.sub || (data.num === "—" ? "Please wait to be called" : "Please proceed to the cashier");
+            subEl.textContent = data.sub ||
+                (data.num === '—' ? 'Please wait to be called' : 'Please proceed to the cashier');
+
+            renderSidePanel(data);
         }
 
-        // Listen for updates from the cashier tab
         window.addEventListener('storage', (e) => {
             if (e.key === 'queue_sync') {
                 updateDisplay(JSON.parse(e.newValue));
             }
         });
 
-        // Initial load
         const saved = localStorage.getItem('queue_sync');
-        if (saved) {
-            updateDisplay(JSON.parse(saved));
-        }
+        if (saved) updateDisplay(JSON.parse(saved));
     </script>
 </body>
 

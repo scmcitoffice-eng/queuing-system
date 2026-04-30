@@ -32,6 +32,22 @@
             </a>
         </header>
 
+        <!-- Queue Type Tabs -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="HMO" onclick="setTab('HMO')">
+                <span class="tab-icon">🏥</span>
+                <span class="tab-label">HMO</span>
+            </button>
+            <button class="tab-btn" data-tab="Cash" onclick="setTab('Cash')">
+                <span class="tab-icon">💵</span>
+                <span class="tab-label">Cash</span>
+            </button>
+            <button class="tab-btn" data-tab="Priority" onclick="setTab('Priority')">
+                <span class="tab-icon">⭐</span>
+                <span class="tab-label">Priority</span>
+            </button>
+        </div>
+
         <div class="now-serving-card">
             <div class="ns-label">NOW SERVING</div>
             <div class="ns-number" id="current">—</div>
@@ -92,7 +108,7 @@
                         <polyline points="1 4 1 10 7 10" />
                         <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
                     </svg>
-                    Reset All
+                    Reset This Queue
                 </button>
             </div>
 
