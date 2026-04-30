@@ -65,7 +65,7 @@
 
         .ns-number {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(160px, 20vw, 300px);
+            font-size: clamp(500px, 300vw, 500px);
             color: #fff;
             line-height: 1;
             text-shadow: 0 0 80px rgba(220, 50, 50, 0.8), 0 6px 30px rgba(0, 0, 0, 0.9);
@@ -83,7 +83,7 @@
 
         /* ── Side Panel ── */
         .side-panel {
-            width: 280px;
+            width: 380px;
             background: #0f0f0f;
             border-left: 1px solid rgba(255, 255, 255, 0.07);
             display: flex;
@@ -100,27 +100,14 @@
 
         .side-header-title {
             font-weight: 800;
-            font-size: 13px;
+            font-size: 16px;
             letter-spacing: 4px;
             text-transform: uppercase;
             color: #fff;
             border-left: 4px solid #ff4d4d;
-            padding-left: 12px;
+            padding-left: 15px;
             text-shadow: 0 0 15px rgba(255, 77, 77, 0.6);
             margin-bottom: 4px;
-        }
-
-        .side-header-count {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
-            color: #fff;
-            line-height: 1.1;
-            margin-top: 2px;
-        }
-
-        .side-header-count span {
-            color: rgba(255, 255, 255, 0.35);
-            font-size: 18px;
         }
 
         .side-scroll {
@@ -146,7 +133,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 9px 12px;
+            padding: 15px 18px;
             border-radius: 8px;
             margin-bottom: 5px;
             background: rgba(255, 255, 255, 0.04);
@@ -197,20 +184,20 @@
 
         .called-num {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
+            font-size: 100px;
             letter-spacing: 2px;
             color: #fff;
             line-height: 1;
         }
 
         .called-meta {
-            font-size: 10px;
+            font-size: 12px;
             color: rgba(255, 255, 255, 0.28);
-            margin-top: 1px;
+            margin-top: 4px;
         }
 
         .called-time {
-            font-size: 11px;
+            font-size: 14px;
             color: rgba(255, 255, 255, 0.22);
             flex-shrink: 0;
         }
@@ -346,7 +333,6 @@
     <div class="side-panel">
         <div class="side-header">
             <div class="side-header-title">SERVED NUMBERS</div>
-            <div class="side-header-count" id="totalCount">0 <span>served</span></div>
         </div>
 
         <div class="conn-badge" id="connBadge">Connecting…</div>
@@ -389,7 +375,6 @@
         const numEl = document.getElementById('displayNum');
         const subEl = document.getElementById('displaySub');
         const listEl = document.getElementById('calledList');
-        const countEl = document.getElementById('totalCount');
         const badgeEl = document.getElementById('connBadge');
 
         let lastAnnouncedTs = Date.now(); // Start from current time to avoid old replays
@@ -432,8 +417,6 @@
                         all.push({ label: fmt(q.prefix, e.num), prefix: q.prefix, action: e.action, time: e.time });
                     });
             }
-
-            countEl.innerHTML = `${all.length} <span>served</span>`;
 
             if (all.length === 0) {
                 listEl.innerHTML = `<div class="no-calls">No numbers called yet.</div>`;
