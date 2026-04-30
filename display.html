@@ -308,7 +308,24 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKaS3b8Usv9zBHWuqzq3RMCIwtx7ttc5Q",
+            authDomain: "queueing-system-a35aa.firebaseapp.com",
+            projectId: "queueing-system-a35aa",
+            storageBucket: "queueing-system-a35aa.firebasestorage.app",
+            messagingSenderId: "706820569428",
+            appId: "1:706820569428:web:72792a1fef109a5a4670c1",
+            measurementId: "G-2J6DHTV94S",
+            databaseURL: "https://queueing-system-a35aa-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
         const numEl = document.getElementById('displayNum');
         const subEl = document.getElementById('displaySub');
         const listEl = document.getElementById('calledList');
@@ -323,18 +340,12 @@
 
         function renderSidePanel(data) {
             if (!data || !data.allQueues) return;
-
             const all = [];
             for (const [type, q] of Object.entries(data.allQueues)) {
-                q.history
+                (q.history || [])
                     .filter(e => e.action === 'Called' || e.action === 'Skipped')
                     .forEach(e => {
-                        all.push({
-                            label: fmt(q.prefix, e.num),
-                            prefix: q.prefix,
-                            action: e.action,
-                            time: e.time
-                        });
+                        all.push({ label: fmt(q.prefix, e.num), prefix: q.prefix, action: e.action, time: e.time });
                     });
             }
 
@@ -345,7 +356,6 @@
             }
 
             countEl.innerHTML = `${all.length} <span>served</span>`;
-
             listEl.innerHTML = all.map((entry, i) => {
                 const cc = colorMap[entry.prefix] || 'hmo';
                 return `
@@ -372,22 +382,21 @@
                 numEl.classList.add('pop');
             }
 
-            numEl.textContent = data.num;
+            numEl.textContent = data.num || '—';
             subEl.textContent = data.sub ||
                 (data.num === '—' ? 'Please wait to be called' : 'Please proceed to the cashier');
 
             renderSidePanel(data);
         }
 
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'queue_sync') {
-                updateDisplay(JSON.parse(e.newValue));
-            }
+        // Listen to Firebase Realtime Database
+        const queueRef = ref(db, 'queue_state');
+        onValue(queueRef, (snapshot) => {
+            const data = snapshot.val();
+            updateDisplay(data);
         });
-
-        const saved = localStorage.getItem('queue_sync');
-        if (saved) updateDisplay(JSON.parse(saved));
     </script>
+
 </body>
 
 </html>
