@@ -152,7 +152,6 @@ function resetQueue() {
   display.textContent = '—';
   display.classList.remove('pop');
   sub.innerHTML = '&nbsp;';
-  window.speechSynthesis && window.speechSynthesis.cancel();
   renderQueue();
 }
 

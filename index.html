@@ -130,7 +130,7 @@
             databaseURL: "https://queueing-system-a35aa-default-rtdb.asia-southeast1.firebasedatabase.app"
         });
 
-        const db = firebase.database();
+        const db = firebase.app().database("https://queueing-system-a35aa-default-rtdb.asia-southeast1.firebasedatabase.app");
         const queueRef = db.ref('queue_state');
 
         // ── Local State ────────────────────────────────────────────────
@@ -252,7 +252,6 @@
             display.textContent = '—';
             display.classList.remove('pop');
             document.getElementById('currentSub').innerHTML = '&nbsp;';
-            window.speechSynthesis && window.speechSynthesis.cancel();
             renderQueue();
         }
 

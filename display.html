@@ -99,11 +99,15 @@
         }
 
         .side-header-title {
-            font-weight: 700;
-            font-size: 10px;
-            letter-spacing: 3px;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 4px;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.35);
+            color: #fff;
+            border-left: 4px solid #ff4d4d;
+            padding-left: 12px;
+            text-shadow: 0 0 15px rgba(255, 77, 77, 0.6);
+            margin-bottom: 4px;
         }
 
         .side-header-count {
@@ -295,6 +299,31 @@
         .ns-number.pop {
             animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+
+        /* Audio Unlock Overlay */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            cursor: pointer;
+        }
+
+        #overlay h2 {
+            font-family: 'Bebas Neue';
+            font-size: 48px;
+            letter-spacing: 4px;
+        }
+
+        #overlay p {
+            opacity: 0.6;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -302,6 +331,10 @@
 
     <!-- Main Now Serving Display -->
     <div class="main-display">
+        <div id="overlay" onclick="startDisplay()">
+            <h2>CLICK TO START SYSTEM</h2>
+            <p>Required to enable voice announcements</p>
+        </div>
         <div class="main-content">
             <div class="ns-label">NOW SERVING</div>
             <div class="ns-number" id="displayNum">—</div>
@@ -312,7 +345,7 @@
     <!-- Side Panel -->
     <div class="side-panel">
         <div class="side-header">
-            <div class="side-header-title">Called Numbers</div>
+            <div class="side-header-title">SERVED NUMBERS</div>
             <div class="side-header-count" id="totalCount">0 <span>served</span></div>
         </div>
 
@@ -339,7 +372,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script>
-        firebase.initializeApp({
+        const config = {
             apiKey: "AIzaSyCKaS3b8Usv9zBHWuqzq3RMCIwtx7ttc5Q",
             authDomain: "queueing-system-a35aa.firebaseapp.com",
             projectId: "queueing-system-a35aa",
@@ -348,21 +381,32 @@
             appId: "1:706820569428:web:72792a1fef109a5a4670c1",
             measurementId: "G-2J6DHTV94S",
             databaseURL: "https://queueing-system-a35aa-default-rtdb.asia-southeast1.firebasedatabase.app"
-        });
+        };
+        firebase.initializeApp(config);
 
-        const db = firebase.database();
+        // Explicitly pass the regional URL for stability
+        const db = firebase.app().database(config.databaseURL);
         const numEl = document.getElementById('displayNum');
         const subEl = document.getElementById('displaySub');
         const listEl = document.getElementById('calledList');
         const countEl = document.getElementById('totalCount');
         const badgeEl = document.getElementById('connBadge');
 
-        let lastAnnouncedTs = 0;
+        let lastAnnouncedTs = Date.now(); // Start from current time to avoid old replays
+        let systemActive = false;
+
         const colorMap = { H: 'hmo', C: 'cash', P: 'priority' };
         const typeLabel = { H: 'HMO', C: 'Cash', P: 'PWD / Priority' };
 
+        function startDisplay() {
+            systemActive = true;
+            document.getElementById('overlay').style.display = 'none';
+            // Small silent announcement to "prime" the engine
+            announceNumber("");
+        }
+
         function announceNumber(label) {
-            if (!window.speechSynthesis) return;
+            if (!window.speechSynthesis || !systemActive || !label) return;
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance();
             msg.text = `Now serving number ${label}. Please proceed to the window.`;
