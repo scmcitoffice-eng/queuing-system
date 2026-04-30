@@ -11,7 +11,6 @@
 </head>
 
 <body>
-
     <div class="container">
 
         <header class="header">
@@ -58,26 +57,20 @@
         </div>
 
         <div class="main-grid">
-
-            <!-- Queue List -->
             <div class="panel right-panel">
                 <div class="history-section">
                     <div class="queue-header">
                         <span class="queue-title">Recent Activity</span>
                     </div>
-                    <div class="history-log" id="historyLog">
-                        <!-- Log entries will appear here -->
-                    </div>
+                    <div class="history-log" id="historyLog"></div>
                 </div>
             </div>
 
-            <!-- Controls -->
             <div class="panel left-panel">
                 <div class="next-up-block">
                     <div class="next-label">Next Up</div>
                     <div class="next-num" id="nextUp">—</div>
                 </div>
-
                 <button class="btn btn-primary" onclick="callNext()">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
@@ -85,7 +78,6 @@
                     </svg>
                     Call Next Patient
                 </button>
-
                 <div class="action-grid">
                     <button class="btn btn-secondary" onclick="recallCurrent()">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -104,7 +96,6 @@
                         Skip
                     </button>
                 </div>
-
                 <button class="btn btn-danger" onclick="resetQueue()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
@@ -114,11 +105,216 @@
                     Reset This Queue
                 </button>
             </div>
+        </div>
 
+        <!-- Firebase status indicator -->
+        <div id="fbStatus"
+            style="position:fixed;bottom:14px;right:18px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;background:#e2f8ee;color:#0e9f6e;display:none;">
+            ● Connected
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <!-- Firebase via CDN (compat mode = no import needed, works with onclick) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        // ── Firebase Init ──────────────────────────────────────────────
+        firebase.initializeApp({
+            apiKey: "AIzaSyCKaS3b8Usv9zBHWuqzq3RMCIwtx7ttc5Q",
+            authDomain: "queueing-system-a35aa.firebaseapp.com",
+            projectId: "queueing-system-a35aa",
+            storageBucket: "queueing-system-a35aa.firebasestorage.app",
+            messagingSenderId: "706820569428",
+            appId: "1:706820569428:web:72792a1fef109a5a4670c1",
+            measurementId: "G-2J6DHTV94S",
+            databaseURL: "https://queueing-system-a35aa-default-rtdb.firebaseio.com"
+        });
+
+        const db = firebase.database();
+        const queueRef = db.ref('queue_state');
+
+        // ── Local State ────────────────────────────────────────────────
+        const queues = {
+            HMO: { prefix: 'H', current: 0, history: [] },
+            Cash: { prefix: 'C', current: 0, history: [] },
+            Priority: { prefix: 'P', current: 0, history: [] }
+        };
+
+        let activeTab = 'HMO';
+        let isSyncing = false;
+
+        // ── Helpers ────────────────────────────────────────────────────
+        function fmt(prefix, n) {
+            return prefix + String(n).padStart(3, '0');
+        }
+
+        function announceNumber(label) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = `Now serving number ${label}. Please proceed to the window.`;
+            msg.lang = 'en-US';
+            msg.rate = 0.85;
+            msg.volume = 1;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function getQ() { return queues[activeTab]; }
+
+        // ── Push to Firebase ───────────────────────────────────────────
+        function pushToFirebase() {
+            const activeQ = queues[activeTab];
+            const subEl = document.getElementById('currentSub');
+            isSyncing = true;
+            queueRef.set({
+                num: activeQ.current === 0 ? '—' : fmt(activeQ.prefix, activeQ.current),
+                sub: activeQ.current === 0 ? '' : (subEl ? subEl.textContent.trim() : ''),
+                ts: Date.now(),
+                allQueues: {
+                    HMO: { prefix: 'H', current: queues.HMO.current, history: queues.HMO.history },
+                    Cash: { prefix: 'C', current: queues.Cash.current, history: queues.Cash.history },
+                    Priority: { prefix: 'P', current: queues.Priority.current, history: queues.Priority.history }
+                }
+            }).then(() => {
+                setTimeout(() => { isSyncing = false; }, 600);
+            });
+        }
+
+        // ── Render UI ──────────────────────────────────────────────────
+        function renderQueue() {
+            const q = getQ();
+            const display = document.getElementById('current');
+            const sub = document.getElementById('currentSub');
+
+            if (q.current === 0) {
+                display.textContent = '—';
+                sub.innerHTML = '&nbsp;';
+            } else {
+                display.textContent = fmt(q.prefix, q.current);
+            }
+
+            document.getElementById('nextUp').textContent =
+                q.current < 999 ? fmt(q.prefix, q.current + 1) : '—';
+
+            document.getElementById('historyLog').innerHTML = q.history.map(e => `
+        <div class="log-item">
+            <span><strong>${fmt(e.prefix, e.num)}</strong> ${e.action}</span>
+            <span style="color:var(--text-muted)">${e.time}</span>
+        </div>
+    `).join('');
+
+            pushToFirebase();
+        }
+
+        function addHistory(action, num) {
+            const q = getQ();
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            q.history.unshift({ action, num, prefix: q.prefix, time });
+            if (q.history.length > 30) q.history.pop();
+        }
+
+        // ── Tab switching ──────────────────────────────────────────────
+        function setTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+            renderQueue();
+        }
+
+        // ── Queue Actions ──────────────────────────────────────────────
+        function callNext() {
+            const q = getQ();
+            if (q.current >= 999) { alert('Maximum number reached. Please reset.'); return; }
+            q.current++;
+            const display = document.getElementById('current');
+            const sub = document.getElementById('currentSub');
+            display.textContent = fmt(q.prefix, q.current);
+            sub.textContent = 'Please proceed to the window';
+            display.classList.remove('pop');
+            void display.offsetWidth;
+            display.classList.add('pop');
+            announceNumber(fmt(q.prefix, q.current));
+            addHistory('Called', q.current);
+            renderQueue();
+        }
+
+        function recallCurrent() {
+            const q = getQ();
+            if (q.current === 0) return;
+            announceNumber(fmt(q.prefix, q.current));
+            addHistory('Recalled', q.current);
+            renderQueue();
+        }
+
+        function skipNext() {
+            const q = getQ();
+            if (q.current >= 999) return;
+            q.current++;
+            document.getElementById('current').textContent = fmt(q.prefix, q.current);
+            document.getElementById('currentSub').textContent = 'Number Skipped';
+            addHistory('Skipped', q.current);
+            renderQueue();
+        }
+
+        function resetQueue() {
+            if (!confirm(`Reset the ${activeTab} queue? This cannot be undone.`)) return;
+            const q = getQ();
+            q.current = 0;
+            q.history = [];
+            const display = document.getElementById('current');
+            display.textContent = '—';
+            display.classList.remove('pop');
+            document.getElementById('currentSub').innerHTML = '&nbsp;';
+            window.speechSynthesis && window.speechSynthesis.cancel();
+            renderQueue();
+        }
+
+        // ── Sync FROM Firebase (other devices) ─────────────────────────
+        queueRef.on('value', (snapshot) => {
+            if (isSyncing) return;
+            const data = snapshot.val();
+            if (!data || !data.allQueues) return;
+
+            for (const [type, q] of Object.entries(data.allQueues)) {
+                if (queues[type]) {
+                    queues[type].current = q.current || 0;
+                    queues[type].history = q.history || [];
+                }
+            }
+
+            const q = getQ();
+            const display = document.getElementById('current');
+            const sub = document.getElementById('currentSub');
+            if (q.current === 0) { display.textContent = '—'; sub.innerHTML = '&nbsp;'; }
+            else { display.textContent = fmt(q.prefix, q.current); sub.textContent = data.sub || 'Please proceed to the window'; }
+            document.getElementById('nextUp').textContent = q.current < 999 ? fmt(q.prefix, q.current + 1) : '—';
+            document.getElementById('historyLog').innerHTML = q.history.map(e => `
+        <div class="log-item">
+            <span><strong>${fmt(e.prefix, e.num)}</strong> ${e.action}</span>
+            <span style="color:var(--text-muted)">${e.time}</span>
+        </div>
+    `).join('');
+        });
+
+        // ── Connection status indicator ────────────────────────────────
+        db.ref('.info/connected').on('value', (snap) => {
+            const el = document.getElementById('fbStatus');
+            if (snap.val() === true) {
+                el.style.display = 'block';
+                el.style.background = '#e2f8ee';
+                el.style.color = '#0e9f6e';
+                el.textContent = '● Firebase Connected';
+            } else {
+                el.style.display = 'block';
+                el.style.background = '#fde8e8';
+                el.style.color = '#e02424';
+                el.textContent = '○ Reconnecting…';
+            }
+        });
+
+        // ── Init ───────────────────────────────────────────────────────
+        renderQueue();
+    </script>
 </body>
 
 </html>

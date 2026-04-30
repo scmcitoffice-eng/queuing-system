@@ -20,6 +20,7 @@
             font-family: 'DM Sans', sans-serif;
         }
 
+        /* ── Main Display ── */
         .main-display {
             flex: 1;
             position: relative;
@@ -80,7 +81,7 @@
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
         }
 
-        /* Side Panel */
+        /* ── Side Panel ── */
         .side-panel {
             width: 280px;
             background: #0f0f0f;
@@ -241,6 +242,28 @@
             border-radius: 50%;
         }
 
+        /* Connection badge */
+        .conn-badge {
+            margin: 0 18px 10px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-align: center;
+            background: #1a2a1a;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .conn-badge.ok {
+            background: rgba(14, 159, 110, 0.2);
+            color: #2ecf9a;
+        }
+
+        .conn-badge.err {
+            background: rgba(224, 36, 36, 0.2);
+            color: #f98080;
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -277,6 +300,7 @@
 
 <body>
 
+    <!-- Main Now Serving Display -->
     <div class="main-display">
         <div class="main-content">
             <div class="ns-label">NOW SERVING</div>
@@ -285,11 +309,14 @@
         </div>
     </div>
 
+    <!-- Side Panel -->
     <div class="side-panel">
         <div class="side-header">
             <div class="side-header-title">Called Numbers</div>
             <div class="side-header-count" id="totalCount">0 <span>served</span></div>
         </div>
+
+        <div class="conn-badge" id="connBadge">Connecting…</div>
 
         <div class="side-scroll" id="calledList">
             <div class="no-calls">No numbers called yet.</div>
@@ -308,11 +335,11 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-        const firebaseConfig = {
+    <!-- Firebase compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        firebase.initializeApp({
             apiKey: "AIzaSyCKaS3b8Usv9zBHWuqzq3RMCIwtx7ttc5Q",
             authDomain: "queueing-system-a35aa.firebaseapp.com",
             projectId: "queueing-system-a35aa",
@@ -321,15 +348,14 @@
             appId: "1:706820569428:web:72792a1fef109a5a4670c1",
             measurementId: "G-2J6DHTV94S",
             databaseURL: "https://queueing-system-a35aa-default-rtdb.firebaseio.com"
-        };
+        });
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
+        const db = firebase.database();
         const numEl = document.getElementById('displayNum');
         const subEl = document.getElementById('displaySub');
         const listEl = document.getElementById('calledList');
         const countEl = document.getElementById('totalCount');
+        const badgeEl = document.getElementById('connBadge');
 
         const colorMap = { H: 'hmo', C: 'cash', P: 'priority' };
         const typeLabel = { H: 'HMO', C: 'Cash', P: 'PWD / Priority' };
@@ -340,6 +366,7 @@
 
         function renderSidePanel(data) {
             if (!data || !data.allQueues) return;
+
             const all = [];
             for (const [type, q] of Object.entries(data.allQueues)) {
                 (q.history || [])
@@ -349,27 +376,27 @@
                     });
             }
 
+            countEl.innerHTML = `${all.length} <span>served</span>`;
+
             if (all.length === 0) {
                 listEl.innerHTML = `<div class="no-calls">No numbers called yet.</div>`;
-                countEl.innerHTML = `0 <span>served</span>`;
                 return;
             }
 
-            countEl.innerHTML = `${all.length} <span>served</span>`;
             listEl.innerHTML = all.map((entry, i) => {
                 const cc = colorMap[entry.prefix] || 'hmo';
                 return `
-                    <div class="called-item type-${cc}">
-                        <div class="item-left">
-                            <div class="type-dot ${cc}"></div>
-                            <div>
-                                <div class="called-num">${entry.label}</div>
-                                <div class="called-meta">${typeLabel[entry.prefix] || ''} &middot; ${entry.action}</div>
-                            </div>
+                <div class="called-item type-${cc}">
+                    <div class="item-left">
+                        <div class="type-dot ${cc}"></div>
+                        <div>
+                            <div class="called-num">${entry.label}</div>
+                            <div class="called-meta">${typeLabel[entry.prefix] || ''} &middot; ${entry.action}</div>
                         </div>
-                        <div class="called-time">${entry.time}</div>
                     </div>
-                `;
+                    <div class="called-time">${entry.time}</div>
+                </div>
+            `;
             }).join('');
         }
 
@@ -384,19 +411,27 @@
 
             numEl.textContent = data.num || '—';
             subEl.textContent = data.sub ||
-                (data.num === '—' ? 'Please wait to be called' : 'Please proceed to the cashier');
+                (!data.num || data.num === '—' ? 'Please wait to be called' : 'Please proceed to the cashier');
 
             renderSidePanel(data);
         }
 
-        // Listen to Firebase Realtime Database
-        const queueRef = ref(db, 'queue_state');
-        onValue(queueRef, (snapshot) => {
-            const data = snapshot.val();
-            updateDisplay(data);
+        // ── Real-time listener ────────────────────────────────────────
+        db.ref('queue_state').on('value', (snapshot) => {
+            updateDisplay(snapshot.val());
+        });
+
+        // ── Connection status ─────────────────────────────────────────
+        db.ref('.info/connected').on('value', (snap) => {
+            if (snap.val()) {
+                badgeEl.textContent = '● Live';
+                badgeEl.className = 'conn-badge ok';
+            } else {
+                badgeEl.textContent = '○ Reconnecting…';
+                badgeEl.className = 'conn-badge err';
+            }
         });
     </script>
-
 </body>
 
 </html>
