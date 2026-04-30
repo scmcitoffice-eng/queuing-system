@@ -11,11 +11,12 @@ const firebaseConfig = {
   storageBucket: "queueing-system-a35aa.firebasestorage.app",
   messagingSenderId: "706820569428",
   appId: "1:706820569428:web:72792a1fef109a5a4670c1",
-  measurementId: "G-2J6DHTV94S"
+  measurementId: "G-2J6DHTV94S",
+  databaseURL: "https://queueing-system-a35aa-default-rtdb.firebaseio.com"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db = getDatabase(app, firebaseConfig.databaseURL);
 const queueRef = ref(db, 'queue_state');
 
 // ── Local State ─────────────────────────────────────────────────
