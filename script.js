@@ -12,7 +12,7 @@ const firebaseConfig = {
   messagingSenderId: "706820569428",
   appId: "1:706820569428:web:72792a1fef109a5a4670c1",
   measurementId: "G-2J6DHTV94S",
-  databaseURL: "https://queueing-system-a35aa-default-rtdb.firebaseio.com"
+  databaseURL: "https://queueing-system-a35aa-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
 const app = initializeApp(firebaseConfig);
