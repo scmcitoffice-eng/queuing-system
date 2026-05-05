@@ -38,7 +38,7 @@ function setTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
-  renderQueue();
+  renderQueue(false);
 }
 
 function getQ() {
@@ -69,7 +69,7 @@ function pushToFirebase() {
 }
 
 // ── Render UI ───────────────────────────────────────────────────
-function renderQueue() {
+function renderQueue(push = true) {
   const q = getQ();
   const display = document.getElementById('current');
   const sub = document.getElementById('currentSub');
@@ -92,7 +92,9 @@ function renderQueue() {
     </div>
   `).join('');
 
-  pushToFirebase();
+  if (push) {
+    pushToFirebase();
+  }
 }
 
 function addHistory(action, num) {

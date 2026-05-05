@@ -160,17 +160,18 @@
                 sub: activeQ.current === 0 ? '' : (subEl ? subEl.textContent.trim() : ''),
                 ts: Date.now(),
                 allQueues: {
-                    HMO: { prefix: 'H', current: queues.HMO.current, history: queues.HMO.history },
-                    Cash: { prefix: 'C', current: queues.Cash.current, history: queues.Cash.history },
-                    Priority: { prefix: 'P', current: queues.Priority.current, history: queues.Priority.history }
+                    // Always spread into a real array so Firebase round-trips cleanly
+                    HMO: { prefix: 'H', current: queues.HMO.current, history: [...queues.HMO.history] },
+                    Cash: { prefix: 'C', current: queues.Cash.current, history: [...queues.Cash.history] },
+                    Priority: { prefix: 'P', current: queues.Priority.current, history: [...queues.Priority.history] }
                 }
             }).then(() => {
                 setTimeout(() => { isSyncing = false; }, 600);
             });
         }
 
-        // ── Render UI ──────────────────────────────────────────────────
-        function renderQueue() {
+        // ── Render UI (local only, no Firebase push) ───────────────────
+        function renderUI() {
             const q = getQ();
             const display = document.getElementById('current');
             const sub = document.getElementById('currentSub');
@@ -191,7 +192,11 @@
             <span style="color:var(--text-muted)">${e.time}</span>
         </div>
     `).join('');
+        }
 
+        // renderQueue = render + push to Firebase (only for real actions)
+        function renderQueue() {
+            renderUI();
             pushToFirebase();
         }
 
@@ -207,7 +212,7 @@
             activeTab = tab;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
-            renderQueue();
+            renderUI(); // local only — never triggers display or speech
         }
 
         // ── Queue Actions ──────────────────────────────────────────────
@@ -255,31 +260,36 @@
             renderQueue();
         }
 
-        // ── Sync FROM Firebase (other devices) ─────────────────────────
+        // ── Firebase stores arrays as objects — always normalize ───────
+        function toArray(val) {
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            return Object.values(val); // {0:{…},1:{…}} → [{…},{…}]
+        }
+
+        // ── Sync FROM Firebase (page load + other devices) ─────────────
         queueRef.on('value', (snapshot) => {
             if (isSyncing) return;
             const data = snapshot.val();
             if (!data || !data.allQueues) return;
 
+            // Restore all queue state from Firebase (fixes refresh data loss)
             for (const [type, q] of Object.entries(data.allQueues)) {
                 if (queues[type]) {
                     queues[type].current = q.current || 0;
-                    queues[type].history = q.history || [];
+                    queues[type].history = toArray(q.history); // fixes array→object bug
                 }
             }
 
+            // Re-render local UI only — never push back to Firebase here
+            renderUI();
+
+            // Restore sub-label for the active tab
             const q = getQ();
-            const display = document.getElementById('current');
             const sub = document.getElementById('currentSub');
-            if (q.current === 0) { display.textContent = '—'; sub.innerHTML = '&nbsp;'; }
-            else { display.textContent = fmt(q.prefix, q.current); sub.textContent = data.sub || 'Please proceed to the window'; }
-            document.getElementById('nextUp').textContent = q.current < 999 ? fmt(q.prefix, q.current + 1) : '—';
-            document.getElementById('historyLog').innerHTML = q.history.map(e => `
-        <div class="log-item">
-            <span><strong>${fmt(e.prefix, e.num)}</strong> ${e.action}</span>
-            <span style="color:var(--text-muted)">${e.time}</span>
-        </div>
-    `).join('');
+            if (q.current !== 0) {
+                sub.textContent = data.sub || 'Please proceed to the window';
+            }
         });
 
         // ── Connection status indicator ────────────────────────────────
@@ -299,7 +309,7 @@
         });
 
         // ── Init ───────────────────────────────────────────────────────
-        renderQueue();
+        renderUI();
     </script>
 </body>
 
