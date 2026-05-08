@@ -100,7 +100,7 @@ function renderQueue(push = true) {
 function addHistory(action, num) {
   const q = getQ();
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  q.history.unshift({ action, num, prefix: q.prefix, time });
+  q.history.unshift({ action, num, prefix: q.prefix, time, timestamp: Date.now() });
   if (q.history.length > 30) q.history.pop();
 }
 

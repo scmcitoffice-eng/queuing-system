@@ -414,7 +414,13 @@
                 (q.history || [])
                     .filter(e => e.action === 'Called' || e.action === 'Skipped')
                     .forEach(e => {
-                        all.push({ label: fmt(q.prefix, e.num), prefix: q.prefix, action: e.action, time: e.time });
+                        all.push({ 
+                            label: fmt(q.prefix, e.num), 
+                            prefix: q.prefix, 
+                            action: e.action, 
+                            time: e.time, 
+                            timestamp: e.timestamp || 0 
+                        });
                     });
             }
 
@@ -423,7 +429,10 @@
                 return;
             }
 
-            listEl.innerHTML = all.map((entry, i) => {
+            // Sort by timestamp descending (newest first)
+            all.sort((a, b) => b.timestamp - a.timestamp);
+
+            listEl.innerHTML = all.slice(0, 15).map((entry, i) => {
                 const cc = colorMap[entry.prefix] || 'hmo';
                 return `
                 <div class="called-item type-${cc}">
